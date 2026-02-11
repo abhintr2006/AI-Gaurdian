@@ -15,11 +15,14 @@ export default function Home() {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
 
-  // ── File handling ───────────────────────────────────
   const handleFile = useCallback((f) => {
     if (!f) return;
     if (!f.type.startsWith("image/")) {
-      setError("Please select a valid image file (JPG, PNG, etc.)");
+      setError("Invalid file type. Select a JPG, PNG, or WEBP image.");
+      return;
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      setError("File exceeds 10 MB limit.");
       return;
     }
     setFile(f);
@@ -36,7 +39,6 @@ export default function Home() {
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  // ── Drag & drop ────────────────────────────────────
   const handleDrag = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -53,7 +55,6 @@ export default function Home() {
     [handleFile]
   );
 
-  // ── Upload ─────────────────────────────────────────
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
@@ -70,34 +71,36 @@ export default function Home() {
       });
       setResult(data);
     } catch (err) {
-      const msg =
+      setError(
         err.response?.data?.error ||
         err.message ||
-        "Upload failed — check if backend & ML service are running";
-      setError(msg);
+        "Request failed. Verify backend and ML service are running."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Render ─────────────────────────────────────────
   const faces = result?.mlData?.results || [];
   const faceCount = result?.mlData?.faces_detected ?? 0;
 
   return (
-    <div className={styles.app}>
+    <div className={styles.page}>
       {/* Header */}
       <header className={styles.header}>
-        <div className={styles.header__icon}>🛡️</div>
-        <h1 className={styles.header__title}>AI Guardian</h1>
-        <p className={styles.header__subtitle}>
-          Intelligent face detection powered by machine learning
+        <div className={styles.headerLabel}>
+          <span className={styles.headerDot} />
+          AI Guardian
+        </div>
+        <h1 className={styles.headerTitle}>Face Detection</h1>
+        <p className={styles.headerDesc}>
+          Upload an image to detect and locate faces using OpenCV.
         </p>
       </header>
 
       {/* Main */}
       <main className={styles.main}>
-        <section className={styles.uploadCard}>
+        <section className={styles.card}>
           {/* Drop Zone */}
           <div
             className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""
@@ -108,13 +111,23 @@ export default function Home() {
             onDrop={handleDrop}
             onClick={() => inputRef.current?.click()}
           >
-            <div className={styles.dropzoneIcon}>📤</div>
-            <p className={styles.dropzoneText}>
-              Drag & drop an image here, or <strong>click to browse</strong>
+            <svg
+              className={styles.uploadIcon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p className={styles.dropzoneLabel}>
+              Drop an image here or <strong>browse files</strong>
             </p>
-            <p className={styles.dropzoneHint}>
-              Supports JPG, PNG, WEBP — max 10 MB
-            </p>
+            <p className={styles.dropzoneHint}>JPG, PNG, WEBP up to 10 MB</p>
             <input
               id="file-upload"
               ref={inputRef}
@@ -125,51 +138,45 @@ export default function Home() {
             />
           </div>
 
-          {/* Image Preview */}
+          {/* Preview */}
           {preview && (
             <div className={styles.preview}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
-                alt="Upload preview"
+                alt="Selected file preview"
                 className={styles.previewImage}
               />
-              <div className={styles.previewName}>
-                <span>📎 {file.name}</span>
-                <button className={styles.previewRemove} onClick={clearFile}>
+              <div className={styles.previewMeta}>
+                <span>{file.name}</span>
+                <button className={styles.removeBtn} onClick={clearFile}>
                   Remove
                 </button>
               </div>
             </div>
           )}
 
-          {/* Upload Button */}
+          {/* Submit */}
           <button
             id="upload-button"
-            className={styles.uploadBtn}
+            className={styles.submitBtn}
             onClick={handleUpload}
             disabled={!file || loading}
           >
             {loading ? (
               <>
-                <span className={styles.spinner} /> Analyzing…
+                <span className={styles.spinner} />
+                Analyzing
               </>
             ) : (
-              <>🔍 Analyze Image</>
+              "Analyze image"
             )}
           </button>
 
-          {/* Status Indicator */}
-          <div className={styles.statusBar}>
-            <span className={styles.statusDot}></span>
-            Backend: localhost:5000 · ML: localhost:8000
-          </div>
-
           {/* Error */}
           {error && (
-            <div className={styles.errorBanner} role="alert">
-              <span className={styles.errorBannerIcon}>⚠️</span>
-              <span>{error}</span>
+            <div className={styles.error} role="alert">
+              {error}
             </div>
           )}
         </section>
@@ -178,12 +185,11 @@ export default function Home() {
         {result && (
           <section className={styles.results}>
             <div className={styles.resultsHeader}>
-              <h2 className={styles.resultsTitle}>Detection Results</h2>
+              <h2 className={styles.resultsTitle}>Results</h2>
               <span
                 className={`${styles.badge} ${faceCount > 0 ? styles.badgeSuccess : styles.badgeWarning
                   }`}
               >
-                {faceCount > 0 ? "✅" : "⚠️"}{" "}
                 {faceCount === 0
                   ? "No faces found"
                   : `${faceCount} face${faceCount > 1 ? "s" : ""} detected`}
@@ -193,13 +199,11 @@ export default function Home() {
             {faces.length > 0 && (
               <div className={styles.resultsGrid}>
                 {faces.map((face, i) => (
-                  <div className={styles.faceCard} key={i}>
-                    <span className={styles.faceCardIcon}>👤</span>
-                    <div className={styles.faceCardInfo}>
-                      <div className={styles.faceCardLabel}>
-                        Face #{i + 1}
-                      </div>
-                      <div className={styles.faceCardCoords}>
+                  <div className={styles.faceRow} key={i}>
+                    <span className={styles.faceIndex}>{i + 1}</span>
+                    <div>
+                      <div className={styles.faceLabel}>Face {i + 1}</div>
+                      <div className={styles.faceCoords}>
                         x:{face.face_box[0]} y:{face.face_box[1]} w:
                         {face.face_box[2]} h:{face.face_box[3]}
                       </div>
@@ -214,8 +218,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        AI Guardian © {new Date().getFullYear()} — Powered by Next.js, OpenCV &
-        FastAPI
+        AI Guardian &middot; OpenCV &middot; FastAPI &middot; Next.js
       </footer>
     </div>
   );
