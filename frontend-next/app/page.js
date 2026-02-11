@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from "react";
 import axios from "axios";
-import styles from "./page.module.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
@@ -73,8 +72,8 @@ export default function Home() {
     } catch (err) {
       setError(
         err.response?.data?.error ||
-        err.message ||
-        "Request failed. Verify backend and ML service are running."
+          err.message ||
+          "Request failed. Verify backend and ML service are running."
       );
     } finally {
       setLoading(false);
@@ -85,25 +84,32 @@ export default function Home() {
   const faceCount = result?.mlData?.faces_detected ?? 0;
 
   return (
-    <div className={styles.page}>
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className={styles.header}>
-        <div className={styles.headerLabel}>
-          <span className={styles.headerDot} />
+      <header className="pt-10 pb-6 px-6 text-center">
+        <div className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide uppercase text-accent mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent" />
           AI Guardian
         </div>
-        <h1 className={styles.headerTitle}>Face Detection</h1>
-        <p className={styles.headerDesc}>
+        <h1 className="text-2xl font-bold text-gray-50 tracking-tight">
+          Face Detection
+        </h1>
+        <p className="text-sm text-gray-400 mt-2">
           Upload an image to detect and locate faces using OpenCV.
         </p>
       </header>
 
       {/* Main */}
-      <main className={styles.main}>
-        <section className={styles.card}>
+      <main className="flex-1 w-full max-w-content mx-auto px-6 pb-12">
+        <section className="bg-gray-900 border border-gray-800 rounded-md p-6">
           {/* Drop Zone */}
           <div
-            className={`${styles.dropzone} ${dragActive ? styles.dropzoneActive : ""
+            className={`border-[1.5px] border-dashed rounded-sm p-10 text-center cursor-pointer
+              transition-[border-color,background] duration-[150ms] ease-default
+              ${
+                dragActive
+                  ? "border-accent bg-accent-muted"
+                  : "border-gray-700 hover:border-accent hover:bg-accent-muted"
               }`}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
@@ -112,7 +118,7 @@ export default function Home() {
             onClick={() => inputRef.current?.click()}
           >
             <svg
-              className={styles.uploadIcon}
+              className="w-8 h-8 mx-auto mb-3 text-gray-500"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -124,32 +130,39 @@ export default function Home() {
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            <p className={styles.dropzoneLabel}>
-              Drop an image here or <strong>browse files</strong>
+            <p className="text-sm text-gray-400 leading-relaxed">
+              Drop an image here or{" "}
+              <strong className="text-accent font-medium">browse files</strong>
             </p>
-            <p className={styles.dropzoneHint}>JPG, PNG, WEBP up to 10 MB</p>
+            <p className="text-xs text-gray-500 mt-2">
+              JPG, PNG, WEBP up to 10 MB
+            </p>
             <input
               id="file-upload"
               ref={inputRef}
               type="file"
               accept="image/*"
-              className={styles.dropzoneInput}
+              className="hidden"
               onChange={(e) => handleFile(e.target.files[0])}
             />
           </div>
 
           {/* Preview */}
           {preview && (
-            <div className={styles.preview}>
+            <div className="mt-5 animate-fade-in">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={preview}
                 alt="Selected file preview"
-                className={styles.previewImage}
+                className="w-full block rounded-sm border border-gray-800"
               />
-              <div className={styles.previewMeta}>
+              <div className="flex items-center justify-between mt-3 px-4 py-3 bg-gray-800 rounded-sm text-xs text-gray-400">
                 <span>{file.name}</span>
-                <button className={styles.removeBtn} onClick={clearFile}>
+                <button
+                  className="text-error font-medium px-2 py-1 rounded-sm
+                    transition-colors duration-[150ms] ease-default hover:bg-error-bg"
+                  onClick={clearFile}
+                >
                   Remove
                 </button>
               </div>
@@ -159,13 +172,18 @@ export default function Home() {
           {/* Submit */}
           <button
             id="upload-button"
-            className={styles.submitBtn}
+            className="flex items-center justify-center gap-2 w-full mt-5 py-3 px-6
+              text-sm font-medium text-white bg-accent rounded-sm
+              transition-[background,transform] duration-[150ms] ease-default
+              hover:bg-accent-hover hover:-translate-y-px
+              active:translate-y-0
+              disabled:opacity-disabled disabled:cursor-not-allowed"
             onClick={handleUpload}
             disabled={!file || loading}
           >
             {loading ? (
               <>
-                <span className={styles.spinner} />
+                <span className="w-4 h-4 border-2 border-white/25 border-t-white rounded-full animate-spin" />
                 Analyzing
               </>
             ) : (
@@ -175,7 +193,12 @@ export default function Home() {
 
           {/* Error */}
           {error && (
-            <div className={styles.error} role="alert">
+            <div
+              className="flex items-start gap-3 mt-4 px-4 py-3
+                bg-error-bg border border-error-border rounded-sm
+                text-sm text-error"
+              role="alert"
+            >
               {error}
             </div>
           )}
@@ -183,12 +206,15 @@ export default function Home() {
 
         {/* Results */}
         {result && (
-          <section className={styles.results}>
-            <div className={styles.resultsHeader}>
-              <h2 className={styles.resultsTitle}>Results</h2>
+          <section className="mt-6 animate-slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-200">Results</h2>
               <span
-                className={`${styles.badge} ${faceCount > 0 ? styles.badgeSuccess : styles.badgeWarning
-                  }`}
+                className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-sm ${
+                  faceCount > 0
+                    ? "bg-success-bg text-success"
+                    : "bg-warning-bg text-warning"
+                }`}
               >
                 {faceCount === 0
                   ? "No faces found"
@@ -197,13 +223,26 @@ export default function Home() {
             </div>
 
             {faces.length > 0 && (
-              <div className={styles.resultsGrid}>
+              <div className="grid gap-2">
                 {faces.map((face, i) => (
-                  <div className={styles.faceRow} key={i}>
-                    <span className={styles.faceIndex}>{i + 1}</span>
+                  <div
+                    className="flex items-center gap-4 px-4 py-3
+                      bg-gray-900 border border-gray-800 rounded-sm
+                      transition-colors duration-[150ms] ease-default
+                      hover:border-gray-700"
+                    key={i}
+                  >
+                    <span
+                      className="w-7 h-7 flex items-center justify-center
+                        text-xs font-semibold text-accent bg-accent-muted rounded-sm shrink-0"
+                    >
+                      {i + 1}
+                    </span>
                     <div>
-                      <div className={styles.faceLabel}>Face {i + 1}</div>
-                      <div className={styles.faceCoords}>
+                      <div className="text-sm font-medium text-gray-200">
+                        Face {i + 1}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5 font-mono">
                         x:{face.face_box[0]} y:{face.face_box[1]} w:
                         {face.face_box[2]} h:{face.face_box[3]}
                       </div>
@@ -217,7 +256,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className={styles.footer}>
+      <footer className="text-center py-5 text-xs text-gray-600">
         AI Guardian &middot; OpenCV &middot; FastAPI &middot; Next.js
       </footer>
     </div>
