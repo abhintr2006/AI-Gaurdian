@@ -15,6 +15,10 @@ app.use("/api/test", require("./routes/test"));
 app.use("/api/ml-test", require("./routes/mlTest"));
 
 // ── Health check ───────────────────────────────────────
+app.get("/", (_req, res) => {
+  res.send("🛡️ AI Guardian Backend is running correctly");
+});
+
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
